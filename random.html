@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake</title>
+
+  <style>
+    /* vycentrování všeho na střed obrazovky pomocí flexboxu */
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #222;
+      color: white;
+    }
+
+    /* skóre nahoře */
+    #skore {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+
+    /* hrací plocha - obyčejný div, na kterém budou pozicovaný políčka hada a jídlo */
+    #hraciPole {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      background-color: black;
+      border: 2px solid white;
+      margin-top: 10px;
+    }
+
+    /* jedno políčko hada - použije se víckrát */
+    .cast_hada {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: limegreen;
+    }
+
+    /* jídlo */
+    #jidlo {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      border-radius: 50%;
+    }
+
+    /* tlačítko start */
+    #startBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Snake</h1>
+
+  <p id="skore">Skóre: 0</p>
+
+  <button id="startBtn" onclick="startHra()">Start</button>
+
+  <div id="hraciPole"></div>
+
+  <script>
+    // velikost jednoho políčka v px (musí sedět s CSS)
+    var velikostPolicka = 20;
+    var pocetPolicek = 20; // hrací plocha je 400px / 20px = 20 políček
+
+    // pole souřadnic hada, každý prvek je objekt {x: ..., y: ...}
+    var had = [];
+    var smerX = 1; // kam se had hýbe po ose x
+    var smerY = 0; // kam se had hýbe po ose y
+    var jidloX = 5;
+    var jidloY = 5;
+    var skore = 0;
+    var casovac = null; // sem si uložíme setInterval, ať ho pak můžeme zastavit
+
+    var hraciPole = document.getElementById("hraciPole");
+    var skoreText = document.getElementById("skore");
+
+    // spustí / restartuje hru
+    function startHra() {
+      // nastavení hada na začátek - 3 políčka za sebou
+      had = [];
+      had.push({ x: 10, y: 10 });
+      had.push({ x: 9, y: 10 });
+      had.push({ x: 8, y: 10 });
+
+      smerX = 1;
+      smerY = 0;
+      skore = 0;
+      skoreText.innerHTML = "Skóre: " + skore;
+
+      novaPoziceJidla();
+      vykresli();
+
+      // zastavíme starý časovač, kdyby náhodou běžel, a spustíme nový
+      clearInterval(casovac);
+      casovac = setInterval(krokHry, 150);
+    }
+
+    // jeden krok hry - posune hada a zkontroluje, jestli něco nenastalo
+    function krokHry() {
+      var staraHlava = had[0];
+      var novaHlavaX = staraHlava.x + smerX;
+      var novaHlavaY = staraHlava.y + smerY;
+
+      // pokud had narazí do zdi, konec hry
+      if (novaHlavaX < 0 || novaHlavaX >= pocetPolicek || novaHlavaY < 0 || novaHlavaY >= pocetPolicek) {
+        clearInterval(casovac);
+        alert("Konec hry! Tvoje skóre je " + skore);
+        return;
+      }
+
+      // pokud had narazí sám do sebe, taky konec hry
+      var narazilDoSebe = false;
+      for (var i = 0; i < had.length; i++) {
+        if (had[i].x === novaHlavaX && had[i].y === novaHlavaY) {
+          narazilDoSebe = true;
+        }
+      }
+      if (narazilDoSebe) {
+        clearInterval(casovac);
+        alert("Konec hry! Tvoje skóre je " + skore);
+        return;
+      }
+
+      // přidáme novou hlavu na začátek pole
+      had.unshift({ x: novaHlavaX, y: novaHlavaY });
+
+      // pokud had sežral jídlo, přičti skóre a vygeneruj nové jídlo
+      if (novaHlavaX === jidloX && novaHlavaY === jidloY) {
+        skore = skore + 1;
+        skoreText.innerHTML = "Skóre: " + skore;
+        novaPoziceJidla();
+      } else {
+        // pokud nesežral, uřízneme poslední políčko, aby had "šel dál" a nerostl
+        had.pop();
+      }
+
+      vykresli();
+    }
+
+    // vybere náhodnou pozici pro jídlo
+    function novaPoziceJidla() {
+      jidloX = Math.floor(Math.random() * pocetPolicek);
+      jidloY = Math.floor(Math.random() * pocetPolicek);
+    }
+
+    // vykreslí hada a jídlo do hracího pole
+    function vykresli() {
+      // smaže všechno staré a nakreslí to znovu
+      hraciPole.innerHTML = "";
+
+      for (var i = 0; i < had.length; i++) {
+        var castHada = document.createElement("div");
+        castHada.className = "cast_hada";
+        castHada.style.left = (had[i].x * velikostPolicka) + "px";
+        castHada.style.top = (had[i].y * velikostPolicka) + "px";
+        hraciPole.appendChild(castHada);
+      }
+
+      var jidloDiv = document.createElement("div");
+      jidloDiv.id = "jidlo";
+      jidloDiv.style.left = (jidloX * velikostPolicka) + "px";
+      jidloDiv.style.top = (jidloY * velikostPolicka) + "px";
+      hraciPole.appendChild(jidloDiv);
+    }
+
+    // ovládání šipkami - posloucháme stisk klávesy na celém dokumentu
+    document.onkeydown = function (event) {
+      if (event.key === "ArrowUp" && smerY === 0) {
+        smerX = 0;
+        smerY = -1;
+      }
+      if (event.key === "ArrowDown" && smerY === 0) {
+        smerX = 0;
+        smerY = 1;
+      }
+      if (event.key === "ArrowLeft" && smerX === 0) {
+        smerX = -1;
+        smerY = 0;
+      }
+      if (event.key === "ArrowRight" && smerX === 0) {
+        smerX = 1;
+        smerY = 0;
+      }
+    };
+  </script>
+
+</body>
+</html>
