@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Neonový Pong</title>
+    <style>
+        /* Stejný moderní tmavý retro styl s černým pozadím */
+        body {
+            background-color: #0b0c10;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding-top: 30px;
+            margin: 0;
+        }
+        h1 {
+            color: #66fcf1;
+            text-shadow: 0 0 10px #66fcf1;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #c5c6c7;
+            font-size: 14px;
+        }
+        #hra-vse {
+            display: inline-flex;
+            background-color: #1f2833;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.2);
+            gap: 20px;
+            margin-top: 10px;
+        }
+        canvas {
+            background-color: #000000;
+            border: 4px solid #45f3ff;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+        }
+        #panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            width: 180px;
+            text-align: left;
+        }
+        .sekce {
+            border: 1px solid #45f3ff;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #0b0c10;
+            box-shadow: 0 0 10px rgba(69, 243, 255, 0.1);
+        }
+        .sekce strong {
+            color: #66fcf1;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .skore-kontejner {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .hrac-label {
+            font-size: 12px;
+            color: #66fcf1;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NEON PONG</h1>
+    <p>Hra pro 2 hráče na jedné klávesnici. První hráč, který získá 10 bodů, vyhrává!</p>
+
+    <div id="hra-vse">
+        <!-- Herní plátno -->
+        <canvas id="pong-platno" width="600" height="400"></canvas>
+        
+        <!-- Boční skóre a ovládání panel -->
+        <div id="panel">
+            <div class="sekce">
+                <strong>SKÓRE</strong>
+                <div class="skore-kontejner">
+                    <div><span class="hrac-label">LEVÝ:</span> <span id="skore-levy">0</span></div>
+                    <div><span class="hrac-label">PRAVÝ:</span> <span id="skore-pravy">0</span></div>
+                </div>
+            </div>
+            <div class="sekce" style="font-size: 12px; color: #c5c6c7; line-height: 1.6;">
+                <strong>OVLÁDÁNÍ LEVÝ</strong>
+                Klávesa <b style="color:#fff">W</b> : Nahoru<br>
+                Klávesa <b style="color:#fff">S</b> : Dolů
+            </div>
+            <div class="sekce" style="font-size: 12px; color: #c5c6c7; line-height: 1.6;">
+                <strong>OVLÁDÁNÍ PRAVÝ</strong>
+                Šipka <b style="color:#fff">↑</b> : Nahoru<br>
+                Šipka <b style="color:#fff">↓</b> : Dolů
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('pong-platno');
+const ctx = canvas.getContext('2d');
+
+// Nastavení herních objektů
+const palkaSirka = 10;
+const palkaVyska = 80;
+
+const levyHrac = {
+    x: 10,
+    y: canvas.height / 2 - palkaVyska / 2,
+    skore: 0
+};
+
+const pravyHrac = {
+    x: canvas.width - 10 - palkaSirka,
+    y: canvas.height / 2 - palkaVyska / 2,
+    skore: 0
+};
+
+const micek = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 7,
+    rychlostX: 4,
+    rychlostY: 4,
+    rychlostZrychleni: 1.05 // Mírné zrychlení po odrazu
+};
+
+// Sledování stisknutých kláves
+const klavesy = {};
+document.addEventListener('keydown', e => klavesy[e.key] = true);
+document.addEventListener('keyup', e => klavesy[e.key] = false);
+
+// Reset míčku doprostřed po skórování
+function resetMicku() {
+    micek.x = canvas.width / 2;
+    micek.y = canvas.height / 2;
+    micek.rychlostX = -micek.rychlostX > 0 ? 4 : -4; // Změní směr k poraženému
+    micek.rychlostY = (Math.random() > 0.5 ? 1 : -1) * 3;
+}
+
+// Hlavní matematická a fyzikální logika hry
+function aktualizujHru() {
+    // Pohyb levé pálky (Klávesy W a S)
+    if (klavesy['w'] || klavesy['W']) levyHrac.y = Math.max(0, levyHrac.y - 6);
+    if (klavesy['s'] || klavesy['S']) levyHrac.y = Math.min(canvas.height - palkaVyska, levyHrac.y + 6);
+
+    // Pohyb pravé pálky (Šipky Nahoru a Dolů)
+    if (klavesy['ArrowUp']) pravyHrac.y = Math.max(0, pravyHrac.y - 6);
+    if (klavesy['ArrowDown']) pravyHrac.y = Math.min(canvas.height - palkaVyska, pravyHrac.y + 6);
+
+    // Pohyb míčku
+    micek.x += micek.rychlostX;
+    micek.y += micek.rychlostY;
+
+    // Odraz od horní a dolní stěny
+    if (micek.y - micek.radius <= 0 || micek.y + micek.radius >= canvas.height) {
+        micek.rychlostY = -micek.rychlostY;
+    }
+
+    // Detekce kolize s levou pálkou
+    if (micek.x - micek.radius <= levyHrac.x + palkaSirka) {
+        if (micek.y >= levyHrac.y && micek.y <= levyHrac.y + palkaVyska) {
+            micek.rychlostX = -micek.rychlostX * micek.rychlostZrychleni;
+            micek.x = levyHrac.x + palkaSirka + micek.radius; // Oprava zaseknutí uvnitř pálky
+        }
+    }
+
+    // Detekce kolize s pravou pálkou
+    if (micek.x + micek.radius >= pravyHrac.x) {
+        if (micek.y >= pravyHrac.y && micek.y <= pravyHrac.y + palkaVyska) {
+            micek.rychlostX = -micek.rychlostX * micek.rychlostZrychleni;
+            micek.x = pravyHrac.x - micek.radius; // Oprava zaseknutí uvnitř pálky
+        }
+    }
+
+    // Skórování na pravé straně (Bod pro levého)
+    if (micek.x + micek.radius > canvas.width) {
+        levyHrac.skore++;
+        document.getElementById('skore-levy').innerText = levyHrac.skore;
+        zkontrolujViteze();
+        resetMicku();
+    }
+
+    // Skórování na levé straně (Bod pro pravého)
+    if (micek.x - micek.radius < 0) {
+        pravyHrac.skore++;
+        document.getElementById('skore-pravy').innerText = pravyHrac.skore;
+        zkontrolujViteze();
+        resetMicku();
+    }
+}
+
+function zkontrolujViteze() {
+    if (levyHrac.skore >= 10) {
+        alert("Levý hráč vyhrává!");
+        vynulujSkore();
+    } else if (pravyHrac.skore >= 10) {
+        alert("Pravý hráč vyhrává!");
+        vynulujSkore();
+    }
+}
+
+function vynulujSkore() {
+    levyHrac.skore = 0;
+    pravyHrac.skore = 0;
+    document.getElementById('skore-levy').innerText = 0;
+    document.getElementById('skore-pravy').innerText = 0;
+}
+
+// Vykreslování grafiky na plátno
+function vykresliHru() {
+    // Vyčištění plátna (černé pozadí)
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Vykreslení středové dělicí čáry (přerušovaná neonová)
+    ctx.strokeStyle = 'rgba(69, 243, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 10]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset přerušované čáry
+
+    // Vykreslení pálky levého hráče
+    ctx.fillStyle = '#ff0000'; // Neonová červená
+    ctx.fillRect(levyHrac.x, levyHrac.y, palkaSirka, palkaVyska);
+
+    // Vykreslení pálky pravého hráče
+    ctx.fillStyle = '#00f0f0'; // Neonová azurová
+    ctx.fillRect(pravyHrac.x, pravyHrac.y, palkaSirka, palkaVyska);
+
+    // Vykreslení kulatého míčku
+    ctx.fillStyle = '#ffff00'; // Neonová žlutá
+    ctx.beginPath();
+    ctx.arc(micek.x, micek.y, micek.radius, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// Hlavní herní smyčka běžící na 60 snímcích za sekundu
+function herniSmycka() {
+    aktualizujHru();
+    vykresliHru();
+    requestAnimationFrame(herniSmycka);
+}
+
+// Spuštění hry
+herniSmycka();
+</script>
+</body>
+</html>
