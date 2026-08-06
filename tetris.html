@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Neonový Tetris</title>
+    <style>
+        /* Moderní tmavý retro styl s černým pozadím */
+        body {
+            background-color: #0b0c10;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding-top: 30px;
+            margin: 0;
+        }
+        h1 {
+            color: #66fcf1;
+            text-shadow: 0 0 10px #66fcf1;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #c5c6c7;
+            font-size: 14px;
+        }
+        #hra-vse {
+            display: inline-flex;
+            background-color: #1f2833;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.2);
+            gap: 20px;
+            margin-top: 10px;
+        }
+        canvas {
+            background-color: #000000;
+            border: 4px solid #45f3ff;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+        }
+        #panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            width: 160px;
+            text-align: left;
+        }
+        .sekce {
+            border: 1px solid #45f3ff;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #0b0c10;
+            box-shadow: 0 0 10px rgba(69, 243, 255, 0.1);
+        }
+        .sekce strong {
+            color: #66fcf1;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        .cislo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NEON TETRIS</h1>
+    <p>Ovládání: Šipky ← a → posunují, šipka ↑ otáčí, šipka ↓ zrychluje pád.</p>
+
+    <div id="hra-vse">
+        <!-- Herní plátno -->
+        <canvas id="tetris-platno" width="240" height="480"></canvas>
+        
+        <!-- Boční skóre panel -->
+        <div id="panel">
+            <div class="sekce">
+                <strong>SKÓRE</strong>
+                <div id="body" class="cislo">0</div>
+            </div>
+            <div class="sekce">
+                <strong>ŘÁDKY</strong>
+                <div id="radky" class="cislo">0</div>
+            </div>
+            <div class="sekce" style="font-size: 12px; color: #c5c6c7; line-height: 1.5;">
+                <strong>OVLÁDÁNÍ</strong>
+                ← / → : Pohyb<br>
+                ↑ : Otočit kostku<br>
+                ↓ : Zrychlit pád
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('tetris-platno');
+const ctx = canvas.getContext('2d');
+ctx.scale(24, 24); // Nastavení velikosti kostiček (Herní pole 10x20 čtverečků)
+
+// Vytvoření prázdného herního pole
+const pole = [];
+for (let i = 0; i < 20; i++) {
+    pole.push(new Array(10).fill(0));
+}
+
+// Správné matice pro klasické Tetris tvary
+const tvary = {
+    'I': [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+    'L': [[0,2,0],[0,2,0],[0,2,2]],
+    'J': [[0,3,0],[0,3,0],[3,3,0]],
+    'O': [[4,4],[4,4]],
+    'T': [[0,5,0],[5,5,5],[0,0,0]],
+    'S': [[0,6,6],[6,6,0],[0,0,0]],
+    'Z': [[7,7,0],[0,7,7],[0,0,0]]
+};
+
+// Zářivé neonové barvy
+const barvy = [
+    null,
+    '#00f0f0', // I - azurová
+    '#ffa500', // L - oranžová
+    '#0000ff', // J - modrá
+    '#ffff00', // O - žlutá
+    '#a000f0', // T - fialová
+    '#00f000', // S - zelená
+    '#ff0000'  // Z - červená
+];
+
+let hrac = {
+    pozice: {x: 3, y: 0},
+    tvar: null,
+    skore: 0,
+    radky: 0
+};
+
+// Vykreslení hrací plochy a padající kostky
+function vykresliMatici(matice, posun) {
+    matice.forEach((radek, y) => {
+        radek.forEach((hodnota, x) => {
+            if (hodnota !== 0) {
+                ctx.fillStyle = barvy[hodnota];
+                ctx.fillRect(x + posun.x, y + posun.y, 1, 1);
+                // Černé ohraničení kostiček pro lepší vzhled
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 0.06;
+                ctx.strokeRect(x + posun.x, y + posun.y, 1, 1);
+            }
+        });
+    });
+}
+
+function vykresliVse() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    vykresliMatici(pole, {x: 0, y: 0});
+    vykresliMatici(hrac.tvar, hrac.pozice);
+}
+
+// Matematická detekce nárazu do stěn nebo jiných kostek
+function kolize(pole, hrac) {
+    const m = hrac.tvar;
+    const o = hrac.pozice;
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0) {
+                if (!pole[y + o.y] || pole[y + o.y][x + o.x] !== 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// Přesun kostky do pevného herního pole po dopadu
+function spojit(pole, hrac) {
+    hrac.tvar.forEach((radek, y) => {
+        radek.forEach((hodnota, x) => {
+            if (hodnota !== 0) {
+                pole[y + hrac.pozice.y][x + hrac.pozice.x] = hodnota;
+            }
+        });
+    });
+}
+
+// Kontrola a mazání kompletních řádků
+function vymazRadky() {
+    let pocetSmazanych = 0;
+    for (let y = pole.length - 1; y >= 0; --y) {
+        if (pole[y].every(hodnota => hodnota !== 0)) {
+            pole.splice(y, 1);
+            pole.unshift(new Array(10).fill(0));
+            pocetSmazanych++;
+            y++; // Zkontroluje stejný index znova po posunu dolů
+        }
+    }
+    if (pocetSmazanych > 0) {
+        hrac.skore += pocetSmazanych * 10;
+        hrac.radky += pocetSmazanych;
+        document.getElementById('body').innerText = hrac.skore;
+        document.getElementById('radky').innerText = hrac.radky;
+    }
+}
+
+// Vygenerování nové náhodné kostky navrchu plochy
+function novaKostka() {
+    const klice = Object.keys(tvary);
+    const nahodnyKlic = klice[Math.floor(Math.random() * klice.length)];
+    
+    // Hluboká kopie pole, aby rotace neničila šablonu tvaru
+    hrac.tvar = tvary[nahodnyKlic].map(row => [...row]);
+    hrac.pozice.y = 0;
+    hrac.pozice.x = Math.floor(5 - hrac.tvar[0].length / 2);
+
+    if (kolize(pole, hrac)) {
+        // Game over - reset celé hry
+        alert("Konec hry! Vaše skóre: " + hrac.skore);
+        pole.forEach(radek => radek.fill(0));
+        hrac.skore = 0;
+        hrac.radky = 0;
+        document.getElementById('body').innerText = 0;
+        document.getElementById('radky').innerText = 0;
+    }
+}
+
+// Funkce pro posun kostky dolů
+function padDolů() {
+    hrac.pozice.y++;
+    if (kolize(pole, hrac)) {
+        hrac.pozice.y--;
+        spojit(pole, hrac);
+        vymazRadky();
+        novaKostka();
+    }
+    casovac = 0;
+}
+
+// Rotace matice kostky ve směru hodinových ručiček
+function otoc(matice) {
+    for (let y = 0; y < matice.length; ++y) {
+        for (let x = 0; x < y; ++x) {
+            [matice[x][y], matice[y][x]] = [matice[y][x], matice[x][y]];
+        }
+    }
+    matice.forEach(radek => radek.reverse());
+}
+
+let casovac = 0;
+let posledniCas = 0;
+
+// Hlavní smyčka hry překreslující obrazovku
+function automatickyPad(cas = 0) {
+    const rozdil = cas - posledniCas;
+    posledniCas = cas;
+    casovac += rozdil;
+
+    if (casovac > 1000) { // Kostka spadne o jeden blok každou sekundu
+        padDolů();
+    }
+    vykresliVse();
+    requestAnimationFrame(automatickyPad);
+}
+
+// Odchytávání stisknutých kláves
+document.addEventListener('keydown', e => {
+    if (e.keyCode === 37) { // Šipka vlevo
+        hrac.pozice.x--;
+        if (kolize(pole, hrac)) hrac.pozice.x++;
+    } else if (e.keyCode === 39) { // Šipka vpravo
+        hrac.pozice.x++;
+        if (kolize(pole, hrac)) hrac.pozice.x--;
+    } else if (e.keyCode === 40) { // Šipka dolů
+        padDolů();
+    } else if (e.keyCode === 38) { // Šipka nahoru (Rotace)
+        const puvodniTvar = hrac.tvar.map(row => [...row]);
+        otoc(hrac.tvar);
+        // Pokud po otočení narazí do stěny, vrátí se zpět
+        if (kolize(pole, hrac)) {
+            hrac.tvar = puvodniTvar;
+        }
+    }
+});
+
+// Inicializace a start hry
+novaKostka();
+automatickyPad();
+</script>
+</body>
+</html>
