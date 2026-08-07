@@ -9,32 +9,32 @@
     <style>
         :root {
             --cell-size: 30px;
-            --bg-color: #000000;
+            --bg-color: #0b0c10;
             --board-bg: #000000;
             --cell-hidden: #000000;
             --cell-revealed: #202020;
-            --border-light: rgb(0, 216, 216);
+            --border-light: #45f3ff;
             --border-dark: rgb(0, 161, 161);
         }
 
         body {
-            font-family: Arial, sans-serif;
+            background-color: #0b0c10;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: var(--bg-color);
             margin: 0;
         }
 
         .game-container {
             text-align: center;
-            background: rgb(0, 0, 0);
+            background: #1f2833;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 5px 5px aqua;
-            border: 3px solid rgb(0, 219, 219);
-            text-shadow: 0 0 10px rgb(0, 174, 255);
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.2);
+            border: 3px solid #66fcf1;
         }
 
         .status-bar {
@@ -53,7 +53,9 @@
             gap: 2px;
             background-color: var(--board-bg);
             padding: 5px;
-            border: 2px solid var(--border-dark);
+            border: 4px solid #45f3ff;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
             user-select: none;
         }
 
@@ -76,7 +78,7 @@
 
         .cell.revealed {
             background-color: var(--cell-revealed);
-            border: 1px solid #0ff;
+            border: 1px solid #66fcf1;
         }
 
         .cell.mine {
@@ -88,61 +90,45 @@
         }
 
         /* Number Colors */
-        .cell[data-number="1"] {
-            color: blue;
-        }
-
-        .cell[data-number="2"] {
-            color: green;
-        }
-
-        .cell[data-number="3"] {
-            color: red;
-        }
-
-        .cell[data-number="4"] {
-            color: darkblue;
-        }
-
-        .cell[data-number="5"] {
-            color: brown;
-        }
-
-        .cell[data-number="6"] {
-            color: turquoise;
-        }
-
-        .cell[data-number="7"] {
-            color: black;
-        }
-
-        .cell[data-number="8"] {
-            color: gray;
-        }
+        .cell[data-number="1"] { color: #66fcf1; }
+        .cell[data-number="2"] { color: #45f3ff; }
+        .cell[data-number="3"] { color: #ff4d4d; }
+        .cell[data-number="4"] { color: #c5c6c7; }
+        .cell[data-number="5"] { color: #66fcf1; }
+        .cell[data-number="6"] { color: #45f3ff; }
+        .cell[data-number="7"] { color: #ffffff; }
+        .cell[data-number="8"] { color: #c5c6c7; }
 
         #reset-btn {
-            background-color: #000000;
+            background-color: #0b0c10;
             border-radius: 100px;
-            border: 3px solid aqua;
+            border: 2px solid #45f3ff;
+            padding: 5px 15px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(69, 243, 255, 0.1);
         }
 
         #op {
-            color: #00e1ff;
-            text-shadow: 0 0 10px rgb(0, 182, 182);
-
+            color: #66fcf1;
+            text-shadow: 0 0 10px #66fcf1;
+            margin: 0;
+            font-size: 14px;
         }
 
         .mine {
-            color: #00fff2;
-            text-shadow: 0 0 10px aqua;
+            color: #66fcf1;
+            text-shadow: 0 0 10px #66fcf1;
+            margin-bottom: 5px;
         }
+
         #mines-count {
-            color: rgb(0, 184, 184);
-            text-shadow: 0 0 10px rgb(0, 219, 219);
+            color: #c5c6c7;
+            text-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
         }
+
         #game-status {
-            text-shadow: 0 0 10px aqua;
-            color: aqua;
+            text-shadow: 0 0 10px #66fcf1;
+            color: #66fcf1;
         }
     </style>
 </head>
@@ -159,7 +145,8 @@
         </div>
         <div id="board"></div>
     </div>
-    <script>const boardElement = document.getElementById('board');
+    <script>
+        const boardElement = document.getElementById('board');
         const minesCountElement = document.getElementById('mines-count');
         const statusElement = document.getElementById('game-status');
         const resetBtn = document.getElementById('reset-btn');
@@ -312,15 +299,13 @@
         }
 
         function checkWin() {
-            // Win condition: All non-mine cells are revealed
             const totalCells = ROWS * COLS;
             const safeCells = totalCells - MINES;
 
             if (revealedCount === safeCells) {
                 gameOver = true;
                 statusElement.textContent = 'You Win! 🎉';
-                statusElement.style.color = 'green';
-                // Flag all remaining mines visually
+                statusElement.style.color = '#66fcf1';
                 for (let r = 0; r < ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         if (grid[r][c].isMine && !grid[r][c].flagged) {
@@ -336,7 +321,8 @@
         resetBtn.addEventListener('click', initGame);
 
         // Start game
-        initGame();</script>
+        initGame();
+    </script>
 </body>
 
 </html>
