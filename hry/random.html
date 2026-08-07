@@ -1,209 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Snake</title>
+    <meta charset="UTF-8">
+    <title>Snake</title>
+    <style>
+        body {
+            background-color: #0b0c10;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
 
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: black;
-      color: cyan;
-    }
+        .H1 {
+            color: #66fcf1;
+            text-shadow: 0 0 10px #66fcf1;
+            margin-bottom: 5px;
+            font-size: 32px;
+            letter-spacing: 2px;
+        }
 
-    /* Vzhled textu pro skóre */
-    #score {
-      font-size: 20px;
-      margin-top: 10px;
-      color: cyan;
-      text-shadow: 0 0 10px cyan;
-      font-family: "Roboto", sans-serif;
-    }
+        #score {
+            color: #c5c6c7;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
 
-    /* Hrací plocha - černý čtverec s bílým okrajem */
-    #gameBoard {
-      position: relative;
-      width: 400px;
-      height: 400px;
-      background-color: black;
-      border: 2px solid cyan;
-      margin-top: 10px;
-    }
+        #gameBoard {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            background-color: #000000;
+            border: 4px solid #45f3ff;
+            border-radius: 6px;
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.2), inset 0 0 20px rgba(0,0,0,0.9);
+        }
 
-    /* Vzhled jednoho článku těla hada */
-    .snakePart {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background-color: limegreen;
-    }
+        .snakePart {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: limegreen; /* Barva hada zachována */
+        }
 
-    /* Vzhled jídla (červený puntík) */
-    #food {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background-color: red;
-      border-radius: 50%;
-    }
+        #food {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red; /* Barva jídla zachována */
+            border-radius: 50%;
+            box-shadow: 0 0 8px red;
+        }
 
-    /* Tlačítko pro spuštění hry */
-    #startBtn {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
+        #startBtn {
+            margin-top: 15px;
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #1f2833;
+            color: #66fcf1;
+            border: 1px solid #45f3ff;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(69, 243, 255, 0.1);
+            transition: all 0.2s ease;
+        }
 
-    .H1{
-      color: cyan;
-      text-shadow: 0 0 10px aqua;
-      font-family: "Roboto", sans-serif;
-    }
-  </style>
+        #startBtn:hover {
+            background-color: #66fcf1;
+            color: #0b0c10;
+            box-shadow: 0 0 15px #66fcf1;
+        }
+    </style>
 </head>
 <body>
 
-  <h1 class="H1">SNAKE</h1>
+    <h1 class="H1">SNAKE</h1>
+    <p id="score">Score: 0</p>
+    <div id="gameBoard"></div>
+    <button id="startBtn" onclick="startGame()">Start</button>
 
-  <p id="score">score: 0</p>
+    <script>
+        // Nastavení velikosti mřížky
+        let gridSize = 20;
+        let gridCount = 20; // 400px / 20px = 20 políček na šířku i výšku
 
-  <button id="startBtn" onclick="startGame()">Start</button>
+        // Herní proměnné
+        let snake = [];        // Pole obsahující souřadnice částí hada
+        let dirX = 1;          // Směr pohybu po ose X (1 = doprava, -1 = doleva)
+        let dirY = 0;          // Směr pohybu po ose Y (1 = dolů, -1 = nahoru)
+        let foodX = 5;         // Pozice jídla X
+        let foodY = 5;         // Pozice jídla Y
+        let score = 0;         // Aktuální skóre
+        let timer = null;      // Časovač pro herní smyčku
 
-  <div id="gameBoard"></div>
+        // Odkazy na HTML prvky
+        let gameBoard = document.getElementById("gameBoard");
+        let scoreText = document.getElementById("score");
 
-  <script>
-    // Nastavení velikosti mřížky
-    let gridSize = 20;
-    let gridCount = 20; // 400px / 20px = 20 políček na šířku i výšku
+        // Funkce pro spuštění nebo restartování hry
+        function startGame() {
+            // Vytvoření počátečního hada (3 články vedle sebe)
+            snake = [];
+            snake.push({ x: 10, y: 10 });
+            snake.push({ x: 9, y: 10 });
+            snake.push({ x: 8, y: 10 });
+            
+            dirX = 1;
+            dirY = 0;
+            score = 0;
+            scoreText.innerHTML = "Score: " + score;
+            generateFood();
+            draw();
 
-    // Herní proměnné
-    let snake = [];        // Pole obsahující souřadnice částí hada
-    let dirX = 1;          // Směr pohybu po ose X (1 = doprava, -1 = doleva)
-    let dirY = 0;          // Směr pohybu po ose Y (1 = dolů, -1 = nahoru)
-    let foodX = 5;         // Pozice jídla X
-    let foodY = 5;         // Pozice jídla Y
-    let score = 0;         // Aktuální skóre
-    let timer = null;      // Časovač pro herní smyčku
-
-    // Odkazy na HTML prvky
-    let gameBoard = document.getElementById("gameBoard");
-    let scoreText = document.getElementById("score");
-
-    // Funkce pro spuštění nebo restartování hry
-    function startGame() {
-      // Vytvoření počátečního hada (3 články vedle sebe)
-      snake = [];
-      snake.push({ x: 10, y: 10 });
-      snake.push({ x: 9, y: 10 });
-      snake.push({ x: 8, y: 10 });
-
-      dirX = 1;
-      dirY = 0;
-      score = 0;
-      scoreText.innerHTML = "Score: " + score;
-
-      generateFood();
-      draw();
-
-      // Zastavení předchozího časovače a spuštění nového (krok každých 150 ms)
-      clearInterval(timer);
-      timer = setInterval(gameStep, 150);
-    }
-
-    // Hlavní logika jednoho kroku hry
-    function gameStep() {
-      let head = snake[0];
-      let newHeadX = head.x + dirX;
-      let newHeadY = head.y + dirY;
-
-      // Kontrola, zda had nenarazil do zdi
-      if (newHeadX < 0 || newHeadX >= gridCount || newHeadY < 0 || newHeadY >= gridCount) {
-        clearInterval(timer);
-        alert("Game over! Your score is " + score);
-        return;
-      }
-
-      // Kontrola, zda had nenarazil sám do sebe
-      let hitSelf = false;
-      for (let i = 0; i < snake.length; i++) {
-        if (snake[i].x === newHeadX && snake[i].y === newHeadY) {
-          hitSelf = true;
+            // Zastavení předchozího časovače a spuštění nového (krok každých 150 ms)
+            clearInterval(timer);
+            timer = setInterval(gameStep, 150);
         }
-      }
-      if (hitSelf) {
-        clearInterval(timer);
-        alert("You hit yourself! Your score is " + score);
-        return;
-      }
 
-      // Přidání nové hlavy na začátek pole
-      snake.unshift({ x: newHeadX, y: newHeadY });
+        // Hlavní logika jednoho kroku hry
+        function gameStep() {
+            let head = snake[0];
+            let newHeadX = head.x + dirX;
+            let newHeadY = head.y + dirY;
 
-      // Kontrola, zda had sežral jídlo
-      if (newHeadX === foodX && newHeadY === foodY) {
-        score = score + 1;
-        scoreText.innerHTML = "Score: " + score;
-        generateFood(); // Vygeneruje nové jídlo (had vyroste, protože neodstraníme konec)
-      } else {
-        snake.pop(); // Pokud jídlo nesežral, odstraníme poslední článek (had se jen posune)
-      }
+            // Kontrola, zda had nenarazil do zdi
+            if (newHeadX < 0 || newHeadX >= gridCount || newHeadY < 0 || newHeadY >= gridCount) {
+                clearInterval(timer);
+                alert("Game over! Your score is " + score);
+                return;
+            }
 
-      draw(); // Překreslení scény
-    }
+            // Kontrola, zda had nenarazil sám do sebe
+            let hitSelf = false;
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === newHeadX && snake[i].y === newHeadY) {
+                    hitSelf = true;
+                }
+            }
 
-    // Vygenerování náhodné pozice pro jídlo
-    function generateFood() {
-      foodX = Math.floor(Math.random() * gridCount);
-      foodY = Math.floor(Math.random() * gridCount);
-    }
+            if (hitSelf) {
+                clearInterval(timer);
+                alert("You hit yourself! Your score is " + score);
+                return;
+            }
 
-    // Vykreslení hada a jídla na hrací plochu
-    function draw() {
-      gameBoard.innerHTML = ""; // Vymazání starého obsahu plochy
+            // Přidání nové hlavy na začátek pole
+            snake.unshift({ x: newHeadX, y: newHeadY });
 
-      // Vykreslení každé části hada
-      for (let i = 0; i < snake.length; i++) {
-        let part = document.createElement("div");
-        part.className = "snakePart";
-        part.style.left = (snake[i].x * gridSize) + "px";
-        part.style.top = (snake[i].y * gridSize) + "px";
-        gameBoard.appendChild(part);
-      }
+            // Kontrola, zda had sežral jídlo
+            if (newHeadX === foodX && newHeadY === foodY) {
+                score = score + 1;
+                scoreText.innerHTML = "Score: " + score;
+                generateFood(); // Vygeneruje nové jídlo
+            } else {
+                snake.pop(); // Pokud jídlo nesežral, odstraníme poslední článek
+            }
 
-      // Vykreslení jídla
-      let foodDiv = document.createElement("div");
-      foodDiv.id = "food";
-      foodDiv.style.left = (foodX * gridSize) + "px";
-      foodDiv.style.top = (foodY * gridSize) + "px";
-      gameBoard.appendChild(foodDiv);
-    }
+            draw(); // Překreslení scény
+        }
 
-    // Ovládání pomocí šipek na klávesnici
-    document.onkeydown = function (event) {
-      // Pohyb nahoru (pokud zrovna nejede dolů)
-      if (event.key === "ArrowUp" && dirY === 0 || event.key === "w" && dirY === 0) {
-        dirX = 0;
-        dirY = -1;
-      }
-      // Pohyb dolů (pokud zrovna nejede nahoru)
-      if (event.key === "ArrowDown" && dirY === 0 || event.key === "s" && dirY === 0) {
-        dirX = 0;
-        dirY = 1;
-      }
-      // Pohyb doleva (pokud zrovna nejede doprava)
-      if (event.key === "ArrowLeft" && dirX === 0 || event.key === "a" && dirX === 0) {
-        dirX = -1;
-        dirY = 0;
-      }
-      // Pohyb doprava (pokud zrovna nejede doleva)
-      if (event.key === "ArrowRight" && dirX === 0 || event.key === "d" && dirX === 0) {
-        dirX = 1;
-        dirY = 0;
-      }
-    };
-  </script>
+        // Vygenerování náhodné pozice pro jídlo
+        function generateFood() {
+            foodX = Math.floor(Math.random() * gridCount);
+            foodY = Math.floor(Math.random() * gridCount);
+        }
 
+        // Vykreslení hada a jídla na hrací plochu
+        function draw() {
+            gameBoard.innerHTML = ""; // Vymazání starého obsahu plochy
+
+            // Vykreslení každé části hada
+            for (let i = 0; i < snake.length; i++) {
+                let part = document.createElement("div");
+                part.className = "snakePart";
+                part.style.left = (snake[i].x * gridSize) + "px";
+                part.style.top = (snake[i].y * gridSize) + "px";
+                gameBoard.appendChild(part);
+            }
+
+            // Vykreslení jídla
+            let foodDiv = document.createElement("div");
+            foodDiv.id = "food";
+            foodDiv.style.left = (foodX * gridSize) + "px";
+            foodDiv.style.top = (foodY * gridSize) + "px";
+            gameBoard.appendChild(foodDiv);
+        }
+
+        // Ovládání pomocí šipek na klávesnici
+        document.onkeydown = function (event) {
+            if ((event.key === "ArrowUp" || event.key === "w") && dirY === 0) {
+                dirX = 0;
+                dirY = -1;
+            }
+            if ((event.key === "ArrowDown" || event.key === "s") && dirY === 0) {
+                dirX = 0;
+                dirY = 1;
+            }
+            if ((event.key === "ArrowLeft" || event.key === "a") && dirX === 0) {
+                dirX = -1;
+                dirY = 0;
+            }
+            if ((event.key === "ArrowRight" || event.key === "d") && dirX === 0) {
+                dirX = 1;
+                dirY = 0;
+            }
+        };
+    </script>
 </body>
 </html>
