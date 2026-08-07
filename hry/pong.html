@@ -74,7 +74,7 @@
 </head>
 <body>
 
-    <h1>NEON PONG</h1>
+    <h1>PING PONG</h1>
     <p>Hra pro 2 hráče na jedné klávesnici. První hráč, který získá 10 bodů, vyhrává!</p>
 
     <div id="hra-vse">
@@ -221,14 +221,6 @@ function vykresliHru() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Vykreslení středové dělicí čáry (přerušovaná neonová)
-    ctx.strokeStyle = 'rgba(69, 243, 255, 0.3)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]); // Reset přerušované čáry
 
     // Vykreslení pálky levého hráče
     ctx.fillStyle = '#ff0000'; // Neonová červená
