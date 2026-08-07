@@ -9,14 +9,17 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background-color: #222;
-      color: white;
+      background-color: black;
+      color: cyan;
     }
 
     /* Vzhled textu pro skóre */
     #score {
       font-size: 20px;
       margin-top: 10px;
+      color: cyan;
+      text-shadow: 0 0 10px cyan;
+      font-family: "Roboto", sans-serif;
     }
 
     /* Hrací plocha - černý čtverec s bílým okrajem */
@@ -25,7 +28,7 @@
       width: 400px;
       height: 400px;
       background-color: black;
-      border: 2px solid white;
+      border: 2px solid cyan;
       margin-top: 10px;
     }
 
@@ -52,13 +55,19 @@
       padding: 10px 20px;
       font-size: 16px;
     }
+
+    .H1{
+      color: cyan;
+      text-shadow: 0 0 10px aqua;
+      font-family: "Roboto", sans-serif;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Snake</h1>
+  <h1 class="H1">SNAKE</h1>
 
-  <p id="score">Score: 0</p>
+  <p id="score">score: 0</p>
 
   <button id="startBtn" onclick="startGame()">Start</button>
 
@@ -125,7 +134,7 @@
       }
       if (hitSelf) {
         clearInterval(timer);
-        alert("Game over! Your score is " + score);
+        alert("You hit yourself! Your score is " + score);
         return;
       }
 
