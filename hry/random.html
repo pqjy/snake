@@ -174,22 +174,22 @@
     // Ovládání pomocí šipek na klávesnici
     document.onkeydown = function (event) {
       // Pohyb nahoru (pokud zrovna nejede dolů)
-      if (event.key === "ArrowUp" && dirY === 0) {
+      if (event.key === "ArrowUp" && dirY === 0 || event.key === "w" && dirY === 0) {
         dirX = 0;
         dirY = -1;
       }
       // Pohyb dolů (pokud zrovna nejede nahoru)
-      if (event.key === "ArrowDown" && dirY === 0) {
+      if (event.key === "ArrowDown" && dirY === 0 || event.key === "s" && dirY === 0) {
         dirX = 0;
         dirY = 1;
       }
       // Pohyb doleva (pokud zrovna nejede doprava)
-      if (event.key === "ArrowLeft" && dirX === 0) {
+      if (event.key === "ArrowLeft" && dirX === 0 || event.key === "a" && dirX === 0) {
         dirX = -1;
         dirY = 0;
       }
       // Pohyb doprava (pokud zrovna nejede doleva)
-      if (event.key === "ArrowRight" && dirX === 0) {
+      if (event.key === "ArrowRight" && dirX === 0 || event.key === "d" && dirX === 0) {
         dirX = 1;
         dirY = 0;
       }
